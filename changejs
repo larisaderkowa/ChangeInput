@@ -1,0 +1,65 @@
+$(document).on("change", "input.input-file", function ()
+    {
+        var iblock = $("select#site option:selected").val();
+        //получаем прикрепленное фото выше
+        var $input = $("#file");
+        var formData = new FormData();
+        formData.append("iblock", iblock);
+        for (key in $input.prop("files"))
+        {
+            formData.append("img" + key, $input.prop("files")[key]);
+        }
+        $.blockUI({
+            message: "<p>Пожалуйста подождите...</p>",
+            css: { backgroundColor: "#f00", color: "#fff" },
+            overlayCSS: { backgroundColor: "#000", opacity: 0.1, cursor: "wait" }
+        });
+        $.ajax({
+            url: ajaxPath + "/fileLoad.php",
+            type: "POST",
+            contentType: false,
+            processData: false,
+            data: formData,
+            dataType: "html",
+            success: function (data)
+            {
+                $.unblockUI();
+                // console.log(data);
+                var res = JSON.parse(data);
+
+                if (res.result == "ok")
+                {
+                    var formData = $("#hlblock-table-form").serializeArray();
+                    formData.push({ name: "ID", value: res.val });
+                    $.blockUI({
+                        message: "<p>Пожалуйста подождите...</p>",
+                        css: { backgroundColor: "#f00", color: "#fff" },
+                        overlayCSS: {
+                            backgroundColor: "#000",
+                            opacity: 0.1,
+                            cursor: "wait"
+                        }
+                    });
+                    $("#intable").load(
+                        ajaxPath + "/table.php",
+                        { data: formData },
+                        function ()
+                        {
+                            $(".editblock").hide();
+                            arrPreLoad = {};
+                            // Lazy.revalidate();
+                            $(".bx-pagination").show();
+                            $.unblockUI();
+                            forTable();
+                            $("input.edit:checkbox").setCheckboxesShift();
+                            $("input.product_hidden:checkbox").setCheckboxesShift();
+                            newItem = false;
+                        }
+                    );
+                } else
+                {
+                    $("#intable").html("Копии не найдены!");
+                }
+            }
+        });
+    });
